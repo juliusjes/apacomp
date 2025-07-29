@@ -1,4 +1,6 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import List
 from bs4 import BeautifulSoup
@@ -27,6 +29,14 @@ app.add_middleware(
 )
 
 DATA_FILE = "listings.json"
+
+# Mount static folder
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Serve HTML at root
+@app.get("/", response_class=FileResponse)
+def serve_root():
+    return FileResponse("static/index.html")
 
 class Listing(BaseModel):
     id: str
