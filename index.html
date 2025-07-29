@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Apartment Listings</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 800px;
+      margin: auto;
+      padding: 1rem;
+    }
+
+    h1 {
+      margin-bottom: 1rem;
+    }
+
+    form {
+      margin-bottom: 2rem;
+    }
+
+    input[type="text"] {
+      width: 70%;
+      padding: 0.5rem;
+      font-size: 1rem;
+    }
+
+    button {
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      margin-left: 0.5rem;
+    }
+
+    .listing {
+      border: 1px solid #ccc;
+      padding: 1rem;
+      margin-bottom: 2rem;
+      border-radius: 8px;
+    }
+
+    .image-scroll {
+      display: flex;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .image-scroll img {
+      flex: 0 0 auto;
+      width: 300px;
+      height: auto;
+      scroll-snap-align: start;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Apartment Listings</h1>
+
+  <form id="addForm">
+    <input type="text" id="urlInput" placeholder="Enter listing URL..." required />
+    <button type="submit">Add Listing</button>
+  </form>
+
+  <div id="listings"></div>
+
+  <script>
+    const listingsContainer = document.getElementById("listings");
+    const form = document.getElementById("addForm");
+    const urlInput = document.getElementById("urlInput");
+
+    function renderListings(listings) {
+      listingsContainer.innerHTML = "";
+      listings.forEach(listing => {
+        const div = document.createElement("div");
+        div.className = "listing";
+
+        const images = listing.image_urls.map(url =>
+          `<img src="${url}" alt="Listing image" />`
+        ).join("");
+
+        div.innerHTML = `
+          <h3>${listing.address}</h3>
+          <p><strong>Price:</strong> ${listing.price}</p>
+          <p><strong>Area:</strong> ${listing.area}</p>
+          <p><strong>Floor:</strong> ${listing.floor}</p>
+          <p><strong>Rooms:</strong> ${listing.rooms}</p>
+          <p><strong>Nearest area:</strong> ${listing.nearest_target}, Distance:  ${listing.distance_to_target_km} km</p>
+          <details>
+            <summary><strong>Description</strong></summary>
+            <p>${listing.description}</p>
+          </details>
+          <div class="image-scroll">${images}</div>
+          <p><a href="${listing.url}" target="_blank">View original listing</a></p>
+          <button onclick="deleteListing('${listing.id}')">Remove</button>
+        `;
+        listingsContainer.appendChild(div);
+      });
+    }
+
+    function loadListings() {
+      fetch("http://localhost:8000/listings")
+        .then(res => res.json())
+        .then(renderListings)
+        .catch(err => {
+          listingsContainer.textContent = "Failed to load listings.";
+          console.error(err);
+        });
+    }
+
+    function deleteListing(id) {
+        fetch(`http://localhost:8000/delete_listing/${id}`, {
+            method: "DELETE"
+        })
+        .then(res => {
+            if (!res.ok) throw new Error("Failed to delete listing.");
+            loadListings();
+        })
+        .catch(err => alert("Error: " + err.message));
+        }
+
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const url = urlInput.value.trim();
+      if (!url) return;
+
+      fetch("http://localhost:8000/add_listing", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ url })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to add listing.");
+        return res.json();
+      })
+      .then(newListing => {
+        urlInput.value = "";
+        loadListings(); // refresh list
+      })
+      .catch(err => {
+        alert("Error: " + err.message);
+      });
+    });
+
+    loadListings();
+  </script>
+</body>
+</html>
