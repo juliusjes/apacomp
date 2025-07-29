@@ -68,6 +68,10 @@
   <div id="listings"></div>
 
   <script>
+    const API_BASE = window.location.hostname.includes("localhost")
+  ? "http://localhost:8000"
+  : "https://apacomp.onrender.com";
+
     const listingsContainer = document.getElementById("listings");
     const form = document.getElementById("addForm");
     const urlInput = document.getElementById("urlInput");
@@ -102,7 +106,7 @@
     }
 
     function loadListings() {
-      fetch("http://localhost:8000/listings")
+      fetch(`${API_BASE}/listings`)
         .then(res => res.json())
         .then(renderListings)
         .catch(err => {
@@ -112,7 +116,7 @@
     }
 
     function deleteListing(id) {
-        fetch(`http://localhost:8000/delete_listing/${id}`, {
+        fetch(`${API_BASE}/delete_listing/${id}`, {
             method: "DELETE"
         })
         .then(res => {
@@ -128,7 +132,7 @@
       const url = urlInput.value.trim();
       if (!url) return;
 
-      fetch("http://localhost:8000/add_listing", {
+      fetch(`${API_BASE}/add_listing`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
